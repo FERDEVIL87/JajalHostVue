@@ -109,7 +109,10 @@
           <p><strong>Status:</strong> <span class="fw-bold">{{ items[0].status_order }}</span></p>
           <p><strong>Tanggal:</strong> {{ new Date(items[0].purchase_date).toLocaleDateString('id-ID') }}</p>
           <ul>
-            <li v-for="item in items" :key="item.id">{{ item.product_name }} (x{{ item.quantity }})</li>
+            <li v-for="item in items" :key="item.id">
+              {{ item.product_name }} (x{{ item.quantity }})
+              <span v-if="item.total_price">- Rp{{ Number(item.total_price).toLocaleString('id-ID') }}</span>
+            </li>
           </ul>
         </div>
       </div>

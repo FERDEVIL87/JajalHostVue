@@ -1,12 +1,12 @@
 <template>
   <section class="pc-list-section-bs">
     <div class="container py-4 py-md-5">
-      <h2 class="section-title-bs text-center">Paket Rakitan PC & Simulasi Kustom</h2>
+      <h2 class="section-title-bs text-center">Paket Rakitan PC & Kustom PC</h2>
 
-      <!-- Tombol Simulasi -->
+      <!-- Tombol Custom -->
       <div class="text-center mb-4">
         <button class="btn btn-pembelian-paket-bs" @click="showSimulasi = !showSimulasi">
-          {{ showSimulasi ? 'Tutup Simulasi Kustom' : 'Buat Rakitan Kustom' }}
+          {{ showSimulasi ? 'Tutup Rakitan Kustom' : 'Buat Rakitan Kustom' }}
         </button>
       </div>
 
@@ -45,7 +45,7 @@
               </tbody>
             </table>
             <div class="d-flex justify-content-between align-items-center mt-3">
-              <div class="total-bs fs-5 fw-bold">Total Simulasi: {{ formatPrice(totalSimulasi) }}</div>
+              <div class="total-bs fs-5 fw-bold">Total Rakitan: {{ formatPrice(totalSimulasi) }}</div>
               <div>
                 <button class="btn btn-secondary me-2" @click="resetSimulasi">Reset</button>
                 <button class="btn btn-success" @click="addToCartSimulasi" :disabled="!isSimulasiLengkap" title="Harap lengkapi semua komponen">
@@ -288,7 +288,7 @@ export default {
         this.resetSimulasi();
       } catch (error) {
         console.error("Gagal memuat komponen PC:", error);
-        this.partsError = "Gagal memuat komponen untuk simulasi.";
+        this.partsError = "Gagal memuat komponen untuk Kustom Rakitan.";
       } finally {
         this.loadingParts = false;
       }
@@ -309,23 +309,28 @@ export default {
         return;
       }
       const selectedForCart = {};
+      // Ambil nama komponen untuk nama item
+      const partNames = [];
       for (const partKey in this.selectedParts) {
+        const part = this.selectedParts[partKey];
         selectedForCart[partKey] = {
-          name: this.selectedParts[partKey].name,
-          price: this.selectedParts[partKey].price,
+          name: part.name,
+          price: part.price,
         };
+        partNames.push(part.name);
       }
+      const customName = `Rakitan Kustom PC (${partNames.join(', ')})`;
       const customBuildItem = {
         id: `sim-${Date.now()}`,
         source: 'rakitan_kustom',
-        name: 'Simulasi Rakitan Kustom',
+        name: customName,
         price: this.totalSimulasi,
         qty: 1,
-        image: '/path/to/placeholder.png', // Sesuaikan path placeholder jika perlu
+        image: 'https://hamiltonrepairs.com/wp-content/uploads/2021/01/AdobeStock_259371766-Converted.jpg',
         specification: { parts: selectedForCart }
       };
       cartStore.addItem(customBuildItem);
-      alert('Simulasi rakitan berhasil ditambahkan ke keranjang!');
+      alert('PC rakitan kustom berhasil ditambahkan ke keranjang!');
       this.resetSimulasi();
       this.showSimulasi = false;
     },
