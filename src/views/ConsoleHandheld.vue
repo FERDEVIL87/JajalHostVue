@@ -60,7 +60,7 @@
         <div v-for="n in 8" :key="n" class="col"><div class="card placeholder-card h-100"><div class="placeholder-img"></div></div></div>
       </div>
       <div v-else-if="filteredConsoles.length > 0" class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3 mt-2" style="min-height:320px;">
-        <div v-for="consoleItem in filteredConsoles" :key="consoleItem.id" class="col">
+        <div v-for="consoleItem in paginatedConsoles" :key="consoleItem.id" class="col">
           <div class="card h-100 border-info text-light d-flex flex-column" role="button" @click="showDetails(consoleItem)">
             <img :src="getImageUrl(consoleItem.image)" :alt="consoleItem.name" class="card-img-top" style="height:120px;object-fit:cover;background:#101829;" loading="lazy"/>
             <div class="card-body py-2 d-flex flex-column flex-grow-1">
@@ -76,6 +76,28 @@
         </div>
       </div>
       <div v-else class="text-center text-info py-4"><p>No consoles match your current filters.</p></div>
+
+      <!-- Pagination controls -->
+      <div v-if="filteredConsoles.length > itemsPerPage" class="d-flex justify-content-center my-3">
+        <nav>
+          <ul class="pagination pagination-sm mb-0">
+            <li class="page-item" :class="{ disabled: currentPage === 1 }">
+              <button class="page-link" @click="changePage(currentPage - 1)" :disabled="currentPage === 1">Prev</button>
+            </li>
+            <li
+              v-for="page in totalPages"
+              :key="page"
+              class="page-item"
+              :class="{ active: currentPage === page }"
+            >
+              <button class="page-link" @click="changePage(page)">{{ page }}</button>
+            </li>
+            <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+              <button class="page-link" @click="changePage(currentPage + 1)" :disabled="currentPage === totalPages">Next</button>
+            </li>
+          </ul>
+        </nav>
+      </div>
     </div>
     <div v-else class="text-center text-info py-4"><p>✨ Please select a category above to explore our awesome consoles! ✨</p></div>
 
@@ -147,6 +169,8 @@ export default {
       consoles: [], // Data akan diisi dari API
       loading: true,
       modalQuantity: 1,
+      currentPage: 1,
+      itemsPerPage: 50,
     };
   },
   async mounted() {
@@ -186,6 +210,14 @@ export default {
       });
       return filtered;
     },
+    paginatedConsoles() {
+      const start = (this.currentPage - 1) * this.itemsPerPage;
+      const end = start + this.itemsPerPage;
+      return this.filteredConsoles.slice(start, end);
+    },
+    totalPages() {
+      return Math.ceil(this.filteredConsoles.length / this.itemsPerPage) || 1;
+    },
   },
   methods: {
     async fetchConsoleData() {
@@ -221,6 +253,7 @@ export default {
       this.selectedCategory = category;
       this.searchQuery = "";
       this.selectedBrand = "";
+      this.currentPage = 1; // Reset to first page on category change
       this.updatePriceSliderBounds();
     },
     formatPrice(price) {
@@ -279,8 +312,23 @@ export default {
       const backendUrl = 'http://127.0.0.1:8000';
       return `${backendUrl}${imagePath}`;
     },
+    changePage(page) {
+      if (page < 1 || page > this.totalPages) return;
+      this.currentPage = page;
+      // Optional: scroll to top of product list after page change
+      this.$nextTick(() => {
+        const productList = this.$el.querySelector('.row.row-cols-1');
+        if (productList) productList.scrollIntoView({ behavior: 'smooth' });
+      });
+    },
   },
   watch: {
+    // Reset to first page if filter changes
+    searchQuery() { this.currentPage = 1; },
+    selectedBrand() { this.currentPage = 1; },
+    minPrice() { this.currentPage = 1; },
+    maxPrice() { this.currentPage = 1; },
+    // ...existing code...
     consoles: 'updatePriceSliderBounds',
   }
 };

@@ -49,12 +49,12 @@
       <!-- Content -->
       <div v-else>
         <div v-if="filteredLaptops.length > 0">
-          <div v-for="categoryData in categoriesWithLaptops" :key="categoryData.name" class="category-section-bs mb-5">
+          <div v-for="categoryData in categoriesWithLaptopsAndPagination" :key="categoryData.name" class="category-section-bs mb-5">
             <div class="category-header-bs text-center">
               <h3 class="category-title-bs">{{ categoryData.name }}</h3>
             </div>
             <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xl-4 g-3 g-lg-4 justify-content-center">
-              <div v-for="laptop in categoryData.laptops" :key="laptop.id" class="col d-flex align-items-stretch">
+              <div v-for="laptop in categoryData.paginatedLaptops" :key="laptop.id" class="col d-flex align-items-stretch">
                 <div class="card h-100 card-bs" @click="openModal(laptop)" role="button" tabindex="0">
                   <div class="card-img-wrapper-bs">
                     <img :src="getImageUrl(laptop.image)" :alt="`Gambar ${laptop.name}`" class="card-img-top card-img-bs" />
@@ -72,6 +72,27 @@
                   </div>
                 </div>
               </div>
+            </div>
+            <!-- Pagination controls per category -->
+            <div v-if="categoryData.laptops.length > itemsPerPage" class="d-flex justify-content-center my-3">
+              <nav>
+                <ul class="pagination pagination-sm mb-0">
+                  <li class="page-item" :class="{ disabled: categoryPageMap[categoryData.name] === 1 }">
+                    <button class="page-link" @click="changeCategoryPage(categoryData.name, categoryPageMap[categoryData.name] - 1)" :disabled="categoryPageMap[categoryData.name] === 1">Prev</button>
+                  </li>
+                  <li
+                    v-for="page in categoryData.totalPages"
+                    :key="page"
+                    class="page-item"
+                    :class="{ active: categoryPageMap[categoryData.name] === page }"
+                  >
+                    <button class="page-link" @click="changeCategoryPage(categoryData.name, page)">{{ page }}</button>
+                  </li>
+                  <li class="page-item" :class="{ disabled: categoryPageMap[categoryData.name] === categoryData.totalPages }">
+                    <button class="page-link" @click="changeCategoryPage(categoryData.name, categoryPageMap[categoryData.name] + 1)" :disabled="categoryPageMap[categoryData.name] === categoryData.totalPages">Next</button>
+                  </li>
+                </ul>
+              </nav>
             </div>
           </div>
         </div>
@@ -142,6 +163,12 @@ export default {
       bootstrapLaptopModal: null,
       checkoutQty: 1,
       loading: true,
+      categoryPageMap: {
+        'Low-End': 1,
+        'Mid-Range': 1,
+        'High-End': 1,
+      },
+      itemsPerPage: 15,
     };
   },
   // Menggunakan created() hook untuk mengambil data saat komponen dibuat
@@ -171,6 +198,25 @@ export default {
           name: categoryName,
           laptops: this.filteredLaptops.filter(laptop => laptop.category === categoryName),
         }))
+        .filter(category => category.laptops.length > 0);
+    },
+    categoriesWithLaptopsAndPagination() {
+      // Gabungkan kategori dengan pagination
+      const categories = ["Low-End", "Mid-Range", "High-End"];
+      return categories
+        .map(categoryName => {
+          const laptops = this.filteredLaptops.filter(laptop => laptop.category === categoryName);
+          const totalPages = Math.ceil(laptops.length / this.itemsPerPage) || 1;
+          const currentPage = this.categoryPageMap[categoryName] || 1;
+          const start = (currentPage - 1) * this.itemsPerPage;
+          const end = start + this.itemsPerPage;
+          return {
+            name: categoryName,
+            laptops,
+            paginatedLaptops: laptops.slice(start, end),
+            totalPages,
+          };
+        })
         .filter(category => category.laptops.length > 0);
     },
   },
@@ -246,8 +292,28 @@ export default {
       });
       alert(`${laptop.name} (x${this.checkoutQty}) telah ditambahkan ke keranjang!`);
       this.closeModal();
-    }
-  }
+    },
+    changeCategoryPage(categoryName, page) {
+      const category = this.categoriesWithLaptopsAndPagination.find(cat => cat.name === categoryName);
+      if (!category) return;
+      if (page < 1 || page > category.totalPages) return;
+      this.$set(this.categoryPageMap, categoryName, page);
+      // Optional: scroll to top of category section after page change
+      this.$nextTick(() => {
+        const section = this.$el.querySelector(`.category-title-bs:contains('${categoryName}')`);
+        if (section) section.scrollIntoView({ behavior: 'smooth' });
+      });
+    },
+  },
+  watch: {
+    // Reset page ke 1 jika filter berubah
+    searchQuery() {
+      this.categoryPageMap = { 'Low-End': 1, 'Mid-Range': 1, 'High-End': 1 };
+    },
+    selectedCategoryFilter() {
+      this.categoryPageMap = { 'Low-End': 1, 'Mid-Range': 1, 'High-End': 1 };
+    },
+  },
 };
 </script>
 

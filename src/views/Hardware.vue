@@ -113,7 +113,7 @@
 
         <div v-if="filteredHardware.length > 0" class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3 mt-2" style="min-height:120px;">
           <div
-            v-for="item in filteredHardware"
+            v-for="item in paginatedHardware"
             :key="item.id"
             class="col d-flex align-items-stretch" 
           >
@@ -157,9 +157,30 @@
             </div>
           </div>
         </div>
-        <div v-else class="text-center text-info py-4" style="font-family:'Orbitron',sans-serif;min-height:80px;">
-          <p>No hardware components match your current filters.</p>
+        <!-- Pagination controls -->
+        <div v-if="filteredHardware.length > itemsPerPage" class="d-flex justify-content-center my-3">
+          <nav>
+            <ul class="pagination pagination-sm mb-0">
+              <li class="page-item" :class="{ disabled: currentPage === 1 }">
+                <button class="page-link" @click="changePage(currentPage - 1)" :disabled="currentPage === 1">Prev</button>
+              </li>
+              <li
+                v-for="page in totalPages"
+                :key="page"
+                class="page-item"
+                :class="{ active: currentPage === page }"
+              >
+                <button class="page-link" @click="changePage(page)">{{ page }}</button>
+              </li>
+              <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+                <button class="page-link" @click="changePage(currentPage + 1)" :disabled="currentPage === totalPages">Next</button>
+              </li>
+            </ul>
+          </nav>
         </div>
+      </div>
+      <div v-else class="text-center text-info py-4" style="font-family:'Orbitron',sans-serif;min-height:80px;">
+        <p>No hardware components match your current filters.</p>
       </div>
       <div v-else class="text-center text-info py-4" style="font-family:'Orbitron',sans-serif;">
         <p>✨ Please select a category above to explore our hardware components! ✨</p>
@@ -268,6 +289,8 @@ export default {
       allHardware: [],
       loading: true,
       modalQuantity: 1,
+      currentPage: 1,
+      itemsPerPage: 50,
     };
   },
   computed: {
@@ -320,6 +343,14 @@ export default {
       }
       return filtered;
     },
+    paginatedHardware() {
+      const start = (this.currentPage - 1) * this.itemsPerPage;
+      const end = start + this.itemsPerPage;
+      return this.filteredHardware.slice(start, end);
+    },
+    totalPages() {
+      return Math.ceil(this.filteredHardware.length / this.itemsPerPage) || 1;
+    },
   },
   methods: {
     async fetchHardwareData() {
@@ -341,11 +372,21 @@ export default {
         this.loading = false;
       }
     },
+    changePage(page) {
+      if (page < 1 || page > this.totalPages) return;
+      this.currentPage = page;
+      // Scroll to top of product list after page change (optional)
+      this.$nextTick(() => {
+        const productList = this.$el.querySelector('.row.row-cols-1');
+        if (productList) productList.scrollIntoView({ behavior: 'smooth' });
+      });
+    },
     selectCategory(category) {
       this.selectedCategory = category;
       this.searchQuery = "";
       this.selectedBrand = "";
       this.sortBy = 'lowToHigh';
+      this.currentPage = 1; // Reset to first page on category change
       this.$nextTick(() => {
         this.minPriceFilter = this.minPriceInCategory;
         this.maxPriceFilter = this.maxPriceInCategory;
@@ -448,6 +489,14 @@ export default {
     if (this.cards && this.cards.length > 0 && !this.selectedCategory) {
       this.selectCategory(this.cards[0]); 
     }
+  },
+  watch: {
+    // Reset to first page if filter changes
+    searchQuery() { this.currentPage = 1; },
+    selectedBrand() { this.currentPage = 1; },
+    minPriceFilter() { this.currentPage = 1; },
+    maxPriceFilter() { this.currentPage = 1; },
+    sortBy() { this.currentPage = 1; },
   },
 };
 </script>

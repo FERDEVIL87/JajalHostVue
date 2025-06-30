@@ -88,12 +88,12 @@
       <div v-if="loadingPCs" class="text-center py-5">Memuat paket rakitan...</div>
       <div v-else-if="errorPCs" class="text-center text-danger py-5">{{ errorPCs }}</div>
       <div v-else-if="filteredPCs.length > 0">
-        <div v-for="categoryData in categoriesWithPCs" :key="categoryData.name" class="category-section-bs mb-5">
+        <div v-for="categoryData in categoriesWithPCsAndPagination" :key="categoryData.name" class="category-section-bs mb-5">
           <div class="category-header-bs text-center">
             <h3 class="category-title-bs">{{ categoryData.name }}</h3>
           </div>
           <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xl-4 g-3 g-lg-4 justify-content-center">
-            <div v-for="pc in categoryData.pcs" :key="pc.id" class="col d-flex align-items-stretch">
+            <div v-for="pc in categoryData.paginatedPCs" :key="pc.id" class="col d-flex align-items-stretch">
               <div class="card h-100 card-bs" role="button" tabindex="0">
                 <div class="card-img-wrapper-bs" @click="openModal(pc)">
                   <img :src="getImageUrl(pc.image)" :alt="pc.name" class="card-img-top card-img-bs" />
@@ -110,6 +110,27 @@
                 </div>
               </div>
             </div>
+          </div>
+          <!-- Pagination controls per category -->
+          <div v-if="categoryData.pcs.length > itemsPerPage" class="d-flex justify-content-center my-3">
+            <nav>
+              <ul class="pagination pagination-sm mb-0">
+                <li class="page-item" :class="{ disabled: categoryPageMap[categoryData.name] === 1 }">
+                  <button class="page-link" @click="changeCategoryPage(categoryData.name, categoryPageMap[categoryData.name] - 1)" :disabled="categoryPageMap[categoryData.name] === 1">Prev</button>
+                </li>
+                <li
+                  v-for="page in categoryData.totalPages"
+                  :key="page"
+                  class="page-item"
+                  :class="{ active: categoryPageMap[categoryData.name] === page }"
+                >
+                  <button class="page-link" @click="changeCategoryPage(categoryData.name, page)">{{ page }}</button>
+                </li>
+                <li class="page-item" :class="{ disabled: categoryPageMap[categoryData.name] === categoryData.totalPages }">
+                  <button class="page-link" @click="changeCategoryPage(categoryData.name, categoryPageMap[categoryData.name] + 1)" :disabled="categoryPageMap[categoryData.name] === categoryData.totalPages">Next</button>
+                </li>
+              </ul>
+            </nav>
           </div>
         </div>
       </div>
@@ -183,6 +204,10 @@ export default {
       loadingParts: true,
       partsError: null,
       selectedParts: {},
+
+      // Pagination
+      categoryPageMap: {},
+      itemsPerPage: 15,
     };
   },
   async created() {
@@ -214,6 +239,23 @@ export default {
         return categoryData.filter(cat => cat.name === this.selectedCategoryFilter && cat.pcs.length > 0);
       }
       return categoryData.filter(cat => cat.pcs.length > 0);
+    },
+    categoriesWithPCsAndPagination() {
+      // Gabungkan kategori dengan pagination
+      if (this.uniqueCategoriesList.length === 0) return [];
+      return this.uniqueCategoriesList.map(categoryName => {
+        const pcs = this.filteredPCs.filter(pc => pc.category === categoryName);
+        const totalPages = Math.ceil(pcs.length / this.itemsPerPage) || 1;
+        const currentPage = this.categoryPageMap[categoryName] || 1;
+        const start = (currentPage - 1) * this.itemsPerPage;
+        const end = start + this.itemsPerPage;
+        return {
+          name: categoryName,
+          pcs,
+          paginatedPCs: pcs.slice(start, end),
+          totalPages,
+        };
+      }).filter(cat => cat.pcs.length > 0);
     },
 
     // --- Computed untuk Simulasi ---
@@ -342,6 +384,36 @@ export default {
     goToCheckout() {
       this.router.push('/checkout');
     },
+    changeCategoryPage(categoryName, page) {
+      const category = this.categoriesWithPCsAndPagination.find(cat => cat.name === categoryName);
+      if (!category) return;
+      if (page < 1 || page > category.totalPages) return;
+      this.$set(this.categoryPageMap, categoryName, page);
+      // Optional: scroll to top of category section after page change
+      this.$nextTick(() => {
+        const section = this.$el.querySelector(`.category-title-bs:contains('${categoryName}')`);
+        if (section) section.scrollIntoView({ behavior: 'smooth' });
+      });
+    },
+    resetCategoryPages() {
+      // Set semua kategori ke halaman 1
+      this.categoryPageMap = {};
+      (this.uniqueCategoriesList || []).forEach(cat => {
+        this.categoryPageMap[cat] = 1;
+      });
+    },
+  },
+  watch: {
+    // Reset page ke 1 jika filter berubah
+    searchQuery() {
+      this.resetCategoryPages();
+    },
+    selectedCategoryFilter() {
+      this.resetCategoryPages();
+    },
+  },
+  mounted() {
+    this.resetCategoryPages();
   },
 };
 </script>

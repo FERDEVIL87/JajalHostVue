@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import 'vue3-carousel/dist/carousel.css';
 import { Carousel, Slide, Pagination, Navigation } from 'vue3-carousel';
 import apiClient from '@/services/api.js';
@@ -97,6 +97,29 @@ onMounted(() => {
   fetchBanners();
   fetchTechNews();
 });
+
+const itemsPerPage = 10;
+const currentNewsPage = ref(1);
+
+const paginatedTechNews = computed(() => {
+  const start = (currentNewsPage.value - 1) * itemsPerPage;
+  const end = start + itemsPerPage;
+  return techNews.value.slice(start, end);
+});
+const totalNewsPages = computed(() => Math.ceil(techNews.value.length / itemsPerPage) || 1);
+
+function changeNewsPage(page) {
+  if (page < 1 || page > totalNewsPages.value) return;
+  currentNewsPage.value = page;
+  // Optional: scroll to news section after page change
+  setTimeout(() => {
+    const section = document.querySelector('.tech-news-section');
+    if (section) section.scrollIntoView({ behavior: 'smooth' });
+  }, 0);
+}
+
+// Reset to page 1 if news changes
+watch(techNews, () => { currentNewsPage.value = 1; });
 </script>
 
 <template>
@@ -194,7 +217,7 @@ onMounted(() => {
           Ikuti Perkembangan Terkini di Dunia Komputer.
         </p>
         <div class="news-grid">
-          <article v-for="news in techNews" :key="news.id" class="news-item">
+          <article v-for="news in paginatedTechNews" :key="news.id" class="news-item">
             <!-- Gunakan fungsi getImageUrl untuk atribut src -->
             <img
               :src="getImageUrl(news.imageUrl)"
@@ -212,6 +235,27 @@ onMounted(() => {
               </div>
             </div>
           </article>
+        </div>
+        <!-- Pagination controls for tech-news -->
+        <div v-if="techNews.length > itemsPerPage" class="d-flex justify-content-center my-3">
+          <nav>
+            <ul class="pagination pagination-sm mb-0">
+              <li class="page-item" :class="{ disabled: currentNewsPage === 1 }">
+                <button class="page-link" @click="changeNewsPage(currentNewsPage - 1)" :disabled="currentNewsPage === 1">Prev</button>
+              </li>
+              <li
+                v-for="page in totalNewsPages"
+                :key="page"
+                class="page-item"
+                :class="{ active: currentNewsPage === page }"
+              >
+                <button class="page-link" @click="changeNewsPage(page)">{{ page }}</button>
+              </li>
+              <li class="page-item" :class="{ disabled: currentNewsPage === totalNewsPages }">
+                <button class="page-link" @click="changeNewsPage(currentNewsPage + 1)" :disabled="currentNewsPage === totalNewsPages">Next</button>
+              </li>
+            </ul>
+          </nav>
         </div>
       </div>
     </section>
