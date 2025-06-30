@@ -5,7 +5,7 @@ import { Carousel, Slide, Pagination, Navigation } from 'vue3-carousel';
 import apiClient from '@/services/api.js';
 import '@/assets/Home.css';
 
-import doomVideoPoster from "/public/videos/doom.mp4";
+import doomVideoPoster from "/public/videos/doom.webm";
 
 // --- LOGIKA UNTUK BANNER (DINAMIS) ---
 const banners = ref([]);
@@ -83,13 +83,13 @@ const formatDate = (dateString) => {
 
 // --- DATA STATIS UNTUK TIM ---
 const team = ref([
-  { name: "Dhimas Apryza H", nim: "23.11.5495", peran: "Frontend Developer & Leader", photo: "/imgprofil/dhimas.jpg.png" },
-  { name: "Ferdy Syaifanoor", nim: "23.11.54", peran: "Prototype & UI/UX Designer, Coordinator, Database Engineer", photo: "/imgprofil/ferdy.jpg.png" },
-  { name: "Didit Gunawan", nim: "23.11.5462", peran: "Frontend Developer", photo: "/imgprofil/didit.jpeg" },
-  { name: "Eri Oktafianto", nim: "23.11.5482", peran: "Frontend Developer", photo: "/imgprofil/eri.png" },
-  { name: "R.M Alfarizky C.K", nim: "23.11.5473", peran: "Frontend Developer", photo: "/imgprofil/alfarizky.jpg.png" },
-  { name: "Ahmad Rafi H", nim: "23.11.5474", peran: "Frontend Developer", photo: "/imgprofil/rafi.png" },
-  { name: "Naufal Zaky A.P", nim: "23.11.5455", peran: "Backend Developer", photo: "/imgprofil/naufal.jpg.png" }
+  { name: "Dhimas Apryza H", nim: "23.11.5495", peran: "Frontend Developer & Leader", photo: "/imgprofil/dhimas.jpg.webp" },
+  { name: "Ferdy Syaifanoor", nim: "23.11.54", peran: "Prototype & UI/UX Designer, Coordinator, Database Engineer", photo: "/imgprofil/ferdy.jpg.webp" },
+  { name: "Didit Gunawan", nim: "23.11.5462", peran: "Frontend Developer", photo: "/imgprofil/didit.webp" },
+  { name: "Eri Oktafianto", nim: "23.11.5482", peran: "Frontend Developer", photo: "/imgprofil/eri.webp" },
+  { name: "R.M Alfarizky C.K", nim: "23.11.5473", peran: "Frontend Developer", photo: "/imgprofil/alfarizky.jpg.webp" },
+  { name: "Ahmad Rafi H", nim: "23.11.5474", peran: "Frontend Developer", photo: "/imgprofil/rafi.webp" },
+  { name: "Naufal Zaky A.P", nim: "23.11.5455", peran: "Backend Developer", photo: "/imgprofil/naufal.jpg.webp" }
 ]);
 
 // --- ONMOUNTED HOOK ---
